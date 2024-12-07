@@ -1,0 +1,43 @@
+# Geral
+*.log
+*.tmp
+*.swp
+*.bak
+*.pid
+*.seed
+*.lock
+
+# Diretórios comuns a ignorar
+node_modules/
+dist/
+build/
+coverage/
+.env
+.env.local
+.DS_Store
+
+# Configurações do sistema operacional
+Thumbs.db
+desktop.ini
+
+# Arquivos de IDEs e editores
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Backend
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+db.sqlite3  # Ignore o banco SQLite local (apenas para desenvolvimento)
+*.sqlite3
+migrations/  # Ignore migrações já aplicadas se não forem relevantes
+media/  # Diretório de uploads (ajuste conforme necessário)
+
+# Frontend
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+/public/assets/  # Diretório de compilação, se aplicável
