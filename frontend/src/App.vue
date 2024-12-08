@@ -1,16 +1,26 @@
 <template>
   <div id="app">
-    <QuestionsList />
+    <WelcomeScreen @user-entered="setUserName" v-if="!userName" />
+    <NextComponent v-else :userName="userName" />
   </div>
 </template>
 
 <script>
-import QuestionsList from './components/QuestionsList.vue';
+import WelcomeScreen from "./components/WelcomeScreen.vue";
 
 export default {
-  name: 'App',
+  data() {
+    return {
+      userName: null, // Estado para armazenar o nome
+    };
+  },
   components: {
-    QuestionsList, // Registra o componente
+    WelcomeScreen,
+  },
+  methods: {
+    setUserName(name) {
+      this.userName = name;
+    },
   },
 };
 </script>
