@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package.json yarn.lock ./
 
 # Instalar dependências com Yarn
-RUN yarn install && yarn add bootstrap
+RUN yarn install && yarn add bootstrap @popperjs/core
 
 # Copiar todo o código do frontend
 COPY . .
