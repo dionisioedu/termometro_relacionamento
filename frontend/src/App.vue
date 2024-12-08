@@ -1,12 +1,12 @@
 <template>
   <div id="app">
-    <WelcomeScreen @user-entered="setUserName" v-if="!userName" />
+    <UserQuestionnaire ser-entered="setUserName" v-if="!userName" />
     <NextComponent v-else :userName="userName" />
   </div>
 </template>
 
 <script>
-import WelcomeScreen from "./components/WelcomeScreen.vue";
+import UserQuestionnaire from "./components/UserQuestionnaire.vue";
 
 export default {
   data() {
@@ -15,7 +15,7 @@ export default {
     };
   },
   components: {
-    WelcomeScreen,
+    UserQuestionnaire,
   },
   methods: {
     setUserName(name) {
