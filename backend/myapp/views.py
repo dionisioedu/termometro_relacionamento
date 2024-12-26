@@ -39,3 +39,21 @@ class SubmitAnswersView(APIView):
             Answer.objects.create(session=session, question=question, response=answer_data['response'])
 
         return Response({"message": "Respostas salvas com sucesso!"}, status=status.HTTP_201_CREATED)
+
+class AnswersView(APIView):
+    def get(self, request, session_id):
+        session = Session.objects.filter(id=session_id).first()
+        if not session:
+            return Response({"error": "Sessão não encontrada!"}, status=status.HTTP_404_NOT_FOUND)
+
+        answers = Answer.objects.filter(session=session).select_related('question')
+
+        data = [
+            {
+                "question": answer.question.text,
+                "response": answer.response
+            }
+            for answer in answers
+        ]
+
+        return Response(data, status=status.HTTP_200_OK)

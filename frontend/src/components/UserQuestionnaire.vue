@@ -24,18 +24,40 @@
         <h2 class="text-primary">Pergunta {{ currentQuestionIndex + 1 }} de {{ questions.length }}</h2>
         <p class="lead">{{ currentQuestion.text }}</p>
         <form @submit.prevent="submitAnswer">
-          <div v-for="option in currentQuestion.options" :key="option.id" class="form-check">
-            <input
-              type="radio"
-              :id="option.id"
-              :value="option.text"
-              v-model="selectedAnswer"
-              class="form-check-input"
-              required
-            />
-            <label :for="option.id" class="form-check-label">{{ option.text }}</label>
+          <!-- Perguntas com opções -->
+          <div v-if="currentQuestion.options && currentQuestion.options.length > 0">
+            <div v-for="option in currentQuestion.options" :key="option.id" class="form-check">
+              <input
+                type="radio"
+                :id="option.id"
+                :value="option.text"
+                v-model="selectedAnswer"
+                class="form-check-input"
+                required
+              />
+              <label :for="option.id" class="form-check-label">{{ option.text }}</label>
+            </div>
           </div>
-          <button type="submit" class="btn btn-primary w-100 mt-3">Próxima</button>
+
+          <!-- Perguntas abertas -->
+          <div v-else>
+            <textarea
+              v-model="selectedAnswer"
+              class="form-control"
+              placeholder="Digite sua resposta"
+              rows="3"
+              required
+            ></textarea>
+          </div>
+
+          <!-- Botão "Próxima" -->
+          <button
+            type="submit"
+            class="btn btn-primary w-100 mt-3"
+            :disabled="!selectedAnswer"
+          >
+            Próxima
+          </button>
         </form>
       </div>
 
@@ -44,7 +66,7 @@
         <h1 class="text-success text-center">Obrigado!</h1>
         <p class="text-center">Respostas salvas com sucesso. Use o link abaixo para compartilhar com seu parceiro(a):</p>
         <p class="text-center text-break"><strong>{{ sessionLink }}</strong></p>
-        <button class="btn btn-primary w-100" @click="copyLink">Copiar Link</button>
+        <button class="btn btn-primary w-100 mt-3" @click="emitSessionCompleted">Ver Respostas</button>
       </div>
     </div>
   </div>
@@ -62,7 +84,7 @@ export default {
       sessionLink: "",
       questions: [], // Estrutura das perguntas: [{ id, text, options: [{ id, text }] }]
       currentQuestionIndex: 0,
-      selectedAnswer: "",
+      selectedAnswer: "", // Resposta selecionada ou preenchida para a pergunta atual
       answers: [],
     };
   },
@@ -78,11 +100,11 @@ export default {
         this.sessionId = response.data.session_id;
         this.sessionLink = response.data.link;
 
-        // Carregar perguntas e opções do backend
+        // Carregar perguntas do backend
         const questionsResponse = await api.get("/questions/");
         this.questions = questionsResponse.data.map((question) => ({
           ...question,
-          options: question.options.map((option, index) => ({
+          options: question.options?.map((option, index) => ({
             id: `${question.id}-option-${index + 1}`,
             text: option,
           })),
@@ -110,7 +132,7 @@ export default {
       } else {
         // Salvar todas as respostas no backend
         try {
-          await api.post(`/session/${this.sessionId}/answers/`, {
+          await api.post(`/session/${this.sessionId}/submit_answers/`, {
             answers: this.answers,
           });
           this.step = "completed";
@@ -119,9 +141,9 @@ export default {
         }
       }
     },
-    copyLink() {
-      navigator.clipboard.writeText(this.sessionLink);
-      alert("Link copiado para a área de transferência!");
+    emitSessionCompleted() {
+      // Emite o evento para o componente pai
+      this.$emit("session-completed", this.sessionId);
     },
   },
 };
