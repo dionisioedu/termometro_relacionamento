@@ -23,7 +23,7 @@
       <div v-else-if="step === 'questions'">
         <h2 class="text-primary">Pergunta {{ currentQuestionIndex + 1 }} de {{ questions.length }}</h2>
         <p class="lead">{{ currentQuestion.text }}</p>
-        <form @submit.prevent="submitAnswer">
+        <form @submit.prevent="saveAndAdvance">
           <!-- Perguntas com opções -->
           <div v-if="currentQuestion.options && currentQuestion.options.length > 0">
             <div v-for="option in currentQuestion.options" :key="option.id" class="form-check">
@@ -31,7 +31,7 @@
                 type="radio"
                 :id="option.id"
                 :value="option.text"
-                v-model="selectedAnswer"
+                v-model="answers[currentQuestionIndex]"
                 class="form-check-input"
                 required
               />
@@ -42,7 +42,7 @@
           <!-- Perguntas abertas -->
           <div v-else>
             <textarea
-              v-model="selectedAnswer"
+              v-model="answers[currentQuestionIndex]"
               class="form-control"
               placeholder="Digite sua resposta"
               rows="3"
@@ -50,14 +50,24 @@
             ></textarea>
           </div>
 
-          <!-- Botão "Próxima" -->
-          <button
-            type="submit"
-            class="btn btn-primary w-100 mt-3"
-            :disabled="!selectedAnswer"
-          >
-            Próxima
-          </button>
+          <!-- Botões de navegação -->
+          <div class="d-flex justify-content-between mt-3">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              @click="goToPreviousQuestion"
+              :disabled="currentQuestionIndex === 0"
+            >
+              Voltar
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              :disabled="!answers[currentQuestionIndex]"
+            >
+              Próxima
+            </button>
+          </div>
         </form>
       </div>
 
@@ -84,8 +94,7 @@ export default {
       sessionLink: "",
       questions: [], // Estrutura das perguntas: [{ id, text, options: [{ id, text }] }]
       currentQuestionIndex: 0,
-      selectedAnswer: "", // Resposta selecionada ou preenchida para a pergunta atual
-      answers: [],
+      answers: [], // Armazena as respostas para cada pergunta
     };
   },
   computed: {
@@ -96,9 +105,15 @@ export default {
   methods: {
     async startSession() {
       try {
+        console.log("Iniciando sessão para:", this.name);
         const response = await api.post("/session/create/", { name: this.name });
         this.sessionId = response.data.session_id;
         this.sessionLink = response.data.link;
+
+        console.log("Sessão criada com sucesso:", {
+          sessionId: this.sessionId,
+          sessionLink: this.sessionLink,
+        });
 
         // Carregar perguntas do backend
         const questionsResponse = await api.get("/questions/");
@@ -110,40 +125,59 @@ export default {
           })),
         }));
 
-        // Mudar para a tela de perguntas
+        console.log("Perguntas carregadas:", this.questions);
+
+        // Inicializar respostas com valores vazios
+        this.answers = new Array(this.questions.length).fill("");
         this.step = "questions";
       } catch (error) {
         console.error("Erro ao iniciar a sessão:", error);
       }
     },
-    async submitAnswer() {
-      // Salvar a resposta atual
-      this.answers.push({
-        question_id: this.currentQuestion.id,
-        response: this.selectedAnswer,
+    saveAndAdvance() {
+      console.log("Salvando resposta da pergunta:", {
+        question: this.currentQuestion,
+        answer: this.answers[this.currentQuestionIndex],
       });
-
-      // Resetar a resposta selecionada
-      this.selectedAnswer = "";
 
       // Avançar para a próxima pergunta ou finalizar
       if (this.currentQuestionIndex < this.questions.length - 1) {
         this.currentQuestionIndex++;
+        console.log("Indo para a próxima pergunta. Índice atual:", this.currentQuestionIndex);
       } else {
-        // Salvar todas as respostas no backend
-        try {
-          await api.post(`/session/${this.sessionId}/submit_answers/`, {
-            answers: this.answers,
-          });
-          this.step = "completed";
-        } catch (error) {
-          console.error("Erro ao salvar respostas:", error);
-        }
+        console.log("Finalizando questionário. Enviando respostas...");
+        this.submitAnswers();
+      }
+    },
+    goToPreviousQuestion() {
+      if (this.currentQuestionIndex > 0) {
+        this.currentQuestionIndex--;
+        console.log("Voltando para a pergunta anterior. Índice atual:", this.currentQuestionIndex);
+      }
+    },
+    async submitAnswers() {
+      try {
+        const answersData = this.questions.map((question, index) => ({
+          question_id: question.id,
+          response: this.answers[index],
+        }));
+
+        console.log("Enviando respostas para o backend:", answersData);
+
+        await api.post(`/session/${this.sessionId}/submit_answers/`, { answers: answersData });
+        this.step = "completed";
+
+        console.log("Respostas enviadas com sucesso!");
+      } catch (error) {
+        console.error("Erro ao salvar respostas:", error);
       }
     },
     emitSessionCompleted() {
-      // Emite o evento para o componente pai
-      this.$emit("session-completed", this.sessionId);
+      console.log("Emitindo evento session-completed com:", this.sessionId);
+      this.$emit("session-completed", {
+        sessionId: this.sessionId,
+        sessionLink: this.sessionLink,
+      });
     },
   },
 };
