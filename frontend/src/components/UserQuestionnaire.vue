@@ -3,7 +3,8 @@
     <div class="card p-4 shadow-sm" style="max-width: 600px; width: 100%;">
       <!-- Tela de boas-vindas -->
       <div v-if="step === 'welcome'">
-        <h1 class="text-primary text-center">Bem-vindo!</h1>
+        <h1 class="text-primary text-center">Bem-vindo ao Amorfy!</h1>
+        <h2 class="text-center">Meça a TEMPERATURA do seu RELACIONAMENTO.</h2>
         <p class="text-center">Nos diga seu nome para começar.</p>
         <form @submit.prevent="startSession">
           <div class="mb-3">
@@ -75,7 +76,7 @@
       <div v-else-if="step === 'completed'">
         <h1 class="text-success text-center">Obrigado!</h1>
         <p class="text-center">Respostas salvas com sucesso. Use o link abaixo para compartilhar com seu parceiro(a):</p>
-        <p class="text-center text-break"><strong>{{ sessionLink }}</strong></p>
+        <p class="text-center text-break"><strong>{{ sessionLink + "/derived_session/" }}</strong></p>
         <button class="btn btn-primary w-100 mt-3" @click="emitSessionCompleted">Ver Respostas</button>
       </div>
     </div>

@@ -15,7 +15,7 @@ class CreateSessionView(APIView):
             return Response({"error": "Nome é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
 
         session = Session.objects.create(name=name)
-        link = f"http://localhost:8000/session/{session.id}"
+        link = f"http://localhost:8000/api/session/{session.id}"
         return Response({"session_id": session.id, "link": link}, status=status.HTTP_201_CREATED)
 
 class QuestionsView(APIView):
@@ -57,3 +57,45 @@ class AnswersView(APIView):
         ]
 
         return Response(data, status=status.HTTP_200_OK)
+
+class CreateDerivedSessionView(APIView):
+    def get(self, request, session_id):
+        origin_session = Session.objects.filter(id=session_id).first()
+        if not origin_session:
+            return Response({"error": "Sessão de origem não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Cria uma nova sessão vinculada à sessão de origem
+        new_session = Session.objects.create(origin_session=origin_session)
+
+        return Response({
+            "new_session_id": str(new_session.id),
+            "origin_session_id": str(origin_session.id)
+        }, status=status.HTTP_201_CREATED)
+
+class CompareSessionsView(APIView):
+    def get(self, request, derived_session_id):
+        derived_session = Session.objects.filter(id=derived_session_id).first()
+        if not derived_session:
+            return Response({"error": "Sessão derivada não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+        origin_session = derived_session.origin_session
+        if not origin_session:
+            return Response({"error": "Sessão de origem não vinculada."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Obter respostas
+        answers_origin = Answer.objects.filter(session=origin_session)
+        answers_derived = Answer.objects.filter(session=derived_session)
+
+        report = []
+        for origin_answer in answers_origin:
+            derived_answer = answers_derived.filter(question=origin_answer.question).first()
+            if derived_answer:
+                similarity = "igual" if origin_answer.response == derived_answer.response else "diferente"
+                report.append({
+                    "question": origin_answer.question.text,
+                    "origin_response": origin_answer.response,
+                    "derived_response": derived_answer.response,
+                    "similarity": similarity,
+                })
+
+        return Response({"report": report}, status=status.HTTP_200_OK)

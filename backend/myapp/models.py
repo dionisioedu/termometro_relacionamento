@@ -5,6 +5,7 @@ class Session(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
+    origin_session = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='derived_sessions')
 
     def __str__(self):
         return f"Session({self.name})"
@@ -37,3 +38,6 @@ class Answer(models.Model):
 
     def __str__(self):
         return f"Answer({self.session.name} - {self.question.text})"
+    
+    class Meta:
+        unique_together = ('session', 'question')

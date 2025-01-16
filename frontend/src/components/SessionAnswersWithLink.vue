@@ -4,7 +4,7 @@
 
     <p class="text-center">
       Compartilhe este link com seu parceiro(a):
-      <strong class="text-break">{{ sessionLink }}</strong>
+      <strong class="text-break">{{ sessionLink + "/devired_session/" }}</strong>
     </p>
 
     <div class="text-center mt-3">
@@ -44,14 +44,14 @@ export default {
   computed: {
     whatsAppLink() {
       // Gera o link para compartilhar no WhatsApp
-      const message = `Olá! Clique aqui para responder algumas perguntar sobre o nosso relacionamento: ${this.sessionLink}`;
+      const message = `Olá! Clique aqui para responder algumas perguntar sobre o nosso relacionamento: ${this.sessionLink}/derived_session`;
       return `https://wa.me/?text=${encodeURIComponent(message)}`;
     },
   },
   methods: {
     copyLink() {
       // Copia o link para a área de transferência
-      navigator.clipboard.writeText(this.sessionLink).then(
+      navigator.clipboard.writeText(this.sessionLink + "/derived_session/").then(
         () => {
           alert("Link copiado para a área de transferência!");
         },

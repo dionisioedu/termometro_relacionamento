@@ -23,7 +23,7 @@
       <div class="text-center mt-4">
         <p>
           Compartilhe este link com seu parceiro(a):
-          <strong class="text-break">{{ sessionLink }}</strong>
+          <strong class="text-break">{{ sessionLink + "/derived_session/" }}</strong>
         </p>
         <button class="btn btn-primary mt-3" @click="goBack">Voltar</button>
       </div>
