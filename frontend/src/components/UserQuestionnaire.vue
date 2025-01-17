@@ -77,6 +77,22 @@
         <h1 class="text-success text-center">Obrigado!</h1>
         <p class="text-center">Respostas salvas com sucesso. Use o link abaixo para compartilhar com seu parceiro(a):</p>
         <p class="text-center text-break"><strong>{{ sessionLink + "/derived_session/" }}</strong></p>
+
+        <!-- Botões de Copiar e Enviar para WhatsApp -->
+        <div class="d-flex justify-content-around mt-3">
+          <button 
+            class="btn btn-outline-primary"
+            @click="copyLink">
+            Copiar Link
+          </button>
+          <a 
+            :href="whatsappLink" 
+            target="_blank"
+            class="btn btn-success">
+            Enviar no WhatsApp
+          </a>
+        </div>
+
         <button class="btn btn-primary w-100 mt-3" @click="emitSessionCompleted">Ver Respostas</button>
       </div>
     </div>
@@ -100,8 +116,14 @@ export default {
   },
   computed: {
     currentQuestion() {
-      return this.questions[this.currentQuestionIndex];
+      return this.questions?.[this.currentQuestionIndex] || null;
     },
+    whatsappLink() {
+    const fullLink = `${this.sessionLink}/derived_session/`;
+    return `https://api.whatsapp.com/send?text=${encodeURIComponent(
+      "Olá! Acesse o link abaixo para participar do questionário Amorfy:\n" + fullLink
+    )}`;
+  },
   },
   methods: {
     async startSession() {
@@ -178,6 +200,17 @@ export default {
       this.$emit("session-completed", {
         sessionId: this.sessionId,
         sessionLink: this.sessionLink,
+      });
+    },
+    copyLink() {
+    const fullLink = `${this.sessionLink}/derived_session/`;
+    navigator.clipboard.writeText(fullLink)
+      .then(() => {
+        alert("Link copiado para a área de transferência!");
+      })
+      .catch((err) => {
+        console.error("Erro ao copiar link:", err);
+        alert("Erro ao copiar o link.");
       });
     },
   },

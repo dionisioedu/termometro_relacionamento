@@ -4,6 +4,7 @@ from rest_framework import status
 from .models import Session, Question, Answer
 from .serializers import SessionSerializer, QuestionSerializer, AnswerSerializer
 from django.http import HttpResponse
+from django.shortcuts import redirect
 
 def index(request):
     return HttpResponse("Termômetro de Relacionamentos!")
@@ -58,7 +59,7 @@ class AnswersView(APIView):
 
         return Response(data, status=status.HTTP_200_OK)
 
-class CreateDerivedSessionView(APIView):
+class DerivedSessionView(APIView):
     def get(self, request, session_id):
         origin_session = Session.objects.filter(id=session_id).first()
         if not origin_session:
@@ -67,14 +68,13 @@ class CreateDerivedSessionView(APIView):
         # Cria uma nova sessão vinculada à sessão de origem
         new_session = Session.objects.create(origin_session=origin_session)
 
-        return Response({
-            "new_session_id": str(new_session.id),
-            "origin_session_id": str(origin_session.id)
-        }, status=status.HTTP_201_CREATED)
+        frontend_base_url = "http://localhost:8080"
 
-class CompareSessionsView(APIView):
-    def get(self, request, derived_session_id):
-        derived_session = Session.objects.filter(id=derived_session_id).first()
+        return redirect(f"{frontend_base_url}/derived_session/{new_session.id}")
+
+class ResultsView(APIView):
+    def get(self, request, session_id):
+        derived_session = Session.objects.filter(id=session_id).first()
         if not derived_session:
             return Response({"error": "Sessão derivada não encontrada."}, status=status.HTTP_404_NOT_FOUND)
 
