@@ -103,6 +103,12 @@
 import api from "../api";
 
 export default {
+  props: {
+    originSessionId: {
+      type: String,
+      default: null, // Nulo para sessões normais, preenchido para derivadas
+    },
+  },
   data() {
     return {
       step: "welcome", // welcome | questions | completed
@@ -112,7 +118,14 @@ export default {
       questions: [], // Estrutura das perguntas: [{ id, text, options: [{ id, text }] }]
       currentQuestionIndex: 0,
       answers: [], // Armazena as respostas para cada pergunta
+      isDerivedSession: false,
     };
+  },
+  created() {
+    if (this.originSessionId) {
+      this.isDerivedSession = true;
+      console.log("Sessão derivada detectada. ID da sessão original:", this.originSessionId);
+    }
   },
   computed: {
     currentQuestion() {
@@ -129,9 +142,13 @@ export default {
     async startSession() {
       try {
         console.log("Iniciando sessão para:", this.name);
+
+        // Enviar requisição para criar a sessão
         const response = await api.post("/session/create/", { name: this.name });
+
+        // Verificar resposta bem-sucedida
         this.sessionId = response.data.session_id;
-        this.sessionLink = response.data.link;
+        this.sessionLink = `${window.location.origin}/session/${this.sessionId}`;
 
         console.log("Sessão criada com sucesso:", {
           sessionId: this.sessionId,
@@ -155,6 +172,23 @@ export default {
         this.step = "questions";
       } catch (error) {
         console.error("Erro ao iniciar a sessão:", error);
+
+        // Tratar erros específicos do backend
+        if (error.response) {
+          const status = error.response.status;
+          const errorMessage = error.response.data.error || "Erro desconhecido.";
+
+          if (status === 400) {
+            alert("Erro: Nome é obrigatório.");
+          } else if (status === 500 && errorMessage.includes("A tabela 'Session' não foi encontrada")) {
+            alert("Erro crítico: Problema no banco de dados. Por favor, entre em contato com o suporte.");
+          } else {
+            alert(`Erro inesperado: ${errorMessage}`);
+          }
+        } else {
+          // Tratar erros de conexão ou outros problemas
+          alert("Erro de conexão com o servidor. Por favor, tente novamente mais tarde.");
+        }
       }
     },
     saveAndAdvance() {
@@ -188,7 +222,14 @@ export default {
         console.log("Enviando respostas para o backend:", answersData);
 
         await api.post(`/session/${this.sessionId}/submit_answers/`, { answers: answersData });
-        this.step = "completed";
+
+        if (this.isDerivedSession) {
+          console.log("Gerando link para resultados...");
+          const resultsLink = `${window.location.origin}/results/${this.sessionId}`;
+          this.$emit("show-results", { sessionId: this.sessionId, resultsLink });
+        } else {
+          this.step = "completed";
+        }
 
         console.log("Respostas enviadas com sucesso!");
       } catch (error) {

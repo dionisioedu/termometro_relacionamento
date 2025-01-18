@@ -5,6 +5,11 @@ from .models import Session, Question, Answer
 from .serializers import SessionSerializer, QuestionSerializer, AnswerSerializer
 from django.http import HttpResponse
 from django.shortcuts import redirect
+import logging
+
+logger = logging.getLogger(__name__)
+
+frontend_base_url = "http://localhost:8080"  # URL do frontend
 
 def index(request):
     return HttpResponse("Termômetro de Relacionamentos!")
@@ -15,9 +20,23 @@ class CreateSessionView(APIView):
         if not name:
             return Response({"error": "Nome é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
 
-        session = Session.objects.create(name=name)
-        link = f"http://localhost:8000/api/session/{session.id}"
-        return Response({"session_id": session.id, "link": link}, status=status.HTTP_201_CREATED)
+        try:
+            session = Session.objects.create(name=name)
+
+        except Session.DoesNotExist:
+            return Response(
+                {"error": "A tabela 'Session' não foi encontrada. Verifique se as migrações foram aplicadas."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        except Exception as e:
+            # Capturar quaisquer outros erros inesperados
+            return Response(
+                {"error": f"Ocorreu um erro inesperado: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        return Response({"session_id": session.id}, status=status.HTTP_201_CREATED)
 
 class QuestionsView(APIView):
     def get(self, request):
@@ -33,6 +52,9 @@ class SubmitAnswersView(APIView):
 
         answers_data = request.data.get('answers', [])
         for answer_data in answers_data:
+            if 'question_id' not in answer_data or 'response' not in answer_data:
+                return Response({"error": "Dados da resposta incompletos."}, status=status.HTTP_400_BAD_REQUEST)
+
             question = Question.objects.filter(id=answer_data['question_id']).first()
             if not question:
                 return Response({"error": f"Pergunta {answer_data['question_id']} não encontrada."}, status=status.HTTP_400_BAD_REQUEST)
@@ -47,7 +69,7 @@ class AnswersView(APIView):
         if not session:
             return Response({"error": "Sessão não encontrada!"}, status=status.HTTP_404_NOT_FOUND)
 
-        answers = Answer.objects.filter(session=session).select_related('question')
+        answers = Answer.objects.filter(session=session).select_related('question').order_by('question__id')
 
         data = [
             {
@@ -65,11 +87,9 @@ class DerivedSessionView(APIView):
         if not origin_session:
             return Response({"error": "Sessão de origem não encontrada."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Cria uma nova sessão vinculada à sessão de origem
+        logger.info(f"Sessão de origem: {origin_session.id}")
         new_session = Session.objects.create(origin_session=origin_session)
-
-        frontend_base_url = "http://localhost:8080"
-
+        logger.info(f"Sessão derivada: {new_session.id}")
         return redirect(f"{frontend_base_url}/derived_session/{new_session.id}")
 
 class ResultsView(APIView):
@@ -80,9 +100,8 @@ class ResultsView(APIView):
 
         origin_session = derived_session.origin_session
         if not origin_session:
-            return Response({"error": "Sessão de origem não vinculada."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Sessão de origem não vinculada à sessão derivada."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Obter respostas
         answers_origin = Answer.objects.filter(session=origin_session)
         answers_derived = Answer.objects.filter(session=derived_session)
 
@@ -98,4 +117,8 @@ class ResultsView(APIView):
                     "similarity": similarity,
                 })
 
-        return Response({"report": report}, status=status.HTTP_200_OK)
+        results_link = f"{frontend_base_url}/results/{session_id}"
+        return Response({
+            "report": report,
+            "results_link": results_link
+        }, status=status.HTTP_200_OK)

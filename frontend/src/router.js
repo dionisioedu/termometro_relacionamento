@@ -1,16 +1,39 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import UserQuestionnaire from './components/UserQuestionnaire.vue';
 import DerivedSession from './components/DerivedSession.vue';
+import SessionAnswers from './components/SessionAnswers.vue';
+import SessionAnswersWithLink from './components/SessionAnswersWithLink.vue';
+import ResultsView from './components/ResultsView.vue';
 
 const routes = [
   {
     path: '/',
+    name: 'UserQuestionnaire',
     component: UserQuestionnaire,
   },
   {
-    path: '/derived_session/:sessionId',
+    path: '/session/:sessionId/derived_session',
+    name: 'DerivedSession',
     component: DerivedSession,
-    props: true, // Passa o `sessionId` como prop para o componente
+    props: true,
+  },
+  {
+    path: '/session/:sessionId/answers',
+    name: 'SessionAnswers',
+    component: SessionAnswers,
+    props: true,
+  },
+  {
+    path: '/session/:sessionId/link',
+    name: 'SessionAnswersWithLink',
+    component: SessionAnswersWithLink,
+    props: true,
+  },
+  {
+    path: '/results/:sessionId',
+    name: 'ResultsView',
+    component: ResultsView,
+    props: true,
   },
 ];
 
