@@ -5,7 +5,12 @@
       <div v-if="step === 'welcome'">
         <h1 class="text-primary text-center">Bem-vindo ao Amorfy!</h1>
         <h2 class="text-center">Meça a TEMPERATURA do seu RELACIONAMENTO.</h2>
-        <p class="text-center">Nos diga seu nome para começar.</p>
+        <p class="text-center">
+          {{ isDerivedSession 
+            ? `Você está participando de uma sessão derivada iniciada por ${originCreatorName}.` 
+            : "Nos diga seu nome para começar."
+          }}
+        </p>
         <form @submit.prevent="startSession">
           <div class="mb-3">
             <input
@@ -92,8 +97,6 @@
             Enviar no WhatsApp
           </a>
         </div>
-
-        <button class="btn btn-primary w-100 mt-3" @click="emitSessionCompleted">Ver Respostas</button>
       </div>
     </div>
   </div>
@@ -119,12 +122,19 @@ export default {
       currentQuestionIndex: 0,
       answers: [], // Armazena as respostas para cada pergunta
       isDerivedSession: false,
+      originCreatorName: null,
     };
   },
-  created() {
-    if (this.originSessionId) {
-      this.isDerivedSession = true;
-      console.log("Sessão derivada detectada. ID da sessão original:", this.originSessionId);
+  async created() {
+    this.isDerivedSession = !!this.originSessionId;
+    if (this.isDerivedSession) {
+      try {
+        const response = await api.get(`/session/${this.originSessionId}/`);
+        this.originCreatorName = response.data.creator_name || "Desconhecido";
+        console.log("Sessão derivada iniciada pelo criador:", this.originCreatorName);
+      } catch (error) {
+        console.error("Erro ao carregar sessão original:", error);
+      }
     }
   },
   computed: {
@@ -132,30 +142,24 @@ export default {
       return this.questions?.[this.currentQuestionIndex] || null;
     },
     whatsappLink() {
-    const fullLink = `${this.sessionLink}/derived_session/`;
-    return `https://api.whatsapp.com/send?text=${encodeURIComponent(
-      "Olá! Acesse o link abaixo para participar do questionário Amorfy:\n" + fullLink
-    )}`;
-  },
+      const fullLink = `${this.sessionLink}/derived_session/`;
+      return `https://api.whatsapp.com/send?text=${encodeURIComponent(
+        "Olá! Acesse o link abaixo para participar do questionário Amorfy:\n" + fullLink
+      )}`;
+    },
   },
   methods: {
     async startSession() {
       try {
         console.log("Iniciando sessão para:", this.name);
 
-        // Enviar requisição para criar a sessão
-        const response = await api.post("/session/create/", { name: this.name });
+        if (!this.isDerivedSession) {
+          const response = await api.post("/session/create/", { name: this.name });
+          this.sessionId = response.data.session_id;
+          this.sessionLink = `${window.location.origin}/session/${this.sessionId}`;
+          console.log("Sessão criada:", this.sessionId);
+        }
 
-        // Verificar resposta bem-sucedida
-        this.sessionId = response.data.session_id;
-        this.sessionLink = `${window.location.origin}/session/${this.sessionId}`;
-
-        console.log("Sessão criada com sucesso:", {
-          sessionId: this.sessionId,
-          sessionLink: this.sessionLink,
-        });
-
-        // Carregar perguntas do backend
         const questionsResponse = await api.get("/questions/");
         this.questions = questionsResponse.data.map((question) => ({
           ...question,
@@ -167,49 +171,23 @@ export default {
 
         console.log("Perguntas carregadas:", this.questions);
 
-        // Inicializar respostas com valores vazios
         this.answers = new Array(this.questions.length).fill("");
         this.step = "questions";
       } catch (error) {
-        console.error("Erro ao iniciar a sessão:", error);
-
-        // Tratar erros específicos do backend
-        if (error.response) {
-          const status = error.response.status;
-          const errorMessage = error.response.data.error || "Erro desconhecido.";
-
-          if (status === 400) {
-            alert("Erro: Nome é obrigatório.");
-          } else if (status === 500 && errorMessage.includes("A tabela 'Session' não foi encontrada")) {
-            alert("Erro crítico: Problema no banco de dados. Por favor, entre em contato com o suporte.");
-          } else {
-            alert(`Erro inesperado: ${errorMessage}`);
-          }
-        } else {
-          // Tratar erros de conexão ou outros problemas
-          alert("Erro de conexão com o servidor. Por favor, tente novamente mais tarde.");
-        }
+        console.error("Erro ao iniciar sessão:", error);
+        alert("Erro ao carregar as perguntas. Tente novamente.");
       }
     },
     saveAndAdvance() {
-      console.log("Salvando resposta da pergunta:", {
-        question: this.currentQuestion,
-        answer: this.answers[this.currentQuestionIndex],
-      });
-
-      // Avançar para a próxima pergunta ou finalizar
       if (this.currentQuestionIndex < this.questions.length - 1) {
         this.currentQuestionIndex++;
-        console.log("Indo para a próxima pergunta. Índice atual:", this.currentQuestionIndex);
       } else {
-        console.log("Finalizando questionário. Enviando respostas...");
         this.submitAnswers();
       }
     },
     goToPreviousQuestion() {
       if (this.currentQuestionIndex > 0) {
         this.currentQuestionIndex--;
-        console.log("Voltando para a pergunta anterior. Índice atual:", this.currentQuestionIndex);
       }
     },
     async submitAnswers() {
@@ -219,39 +197,22 @@ export default {
           response: this.answers[index],
         }));
 
-        console.log("Enviando respostas para o backend:", answersData);
-
         await api.post(`/session/${this.sessionId}/submit_answers/`, { answers: answersData });
 
         if (this.isDerivedSession) {
-          console.log("Gerando link para resultados...");
           const resultsLink = `${window.location.origin}/results/${this.sessionId}`;
           this.$emit("show-results", { sessionId: this.sessionId, resultsLink });
         } else {
           this.step = "completed";
         }
-
-        console.log("Respostas enviadas com sucesso!");
       } catch (error) {
         console.error("Erro ao salvar respostas:", error);
       }
     },
-    emitSessionCompleted() {
-      console.log("Emitindo evento session-completed com:", this.sessionId);
-      this.$emit("session-completed", {
-        sessionId: this.sessionId,
-        sessionLink: this.sessionLink,
-      });
-    },
     copyLink() {
-    const fullLink = `${this.sessionLink}/derived_session/`;
-    navigator.clipboard.writeText(fullLink)
-      .then(() => {
+      const fullLink = `${this.sessionLink}/derived_session/`;
+      navigator.clipboard.writeText(fullLink).then(() => {
         alert("Link copiado para a área de transferência!");
-      })
-      .catch((err) => {
-        console.error("Erro ao copiar link:", err);
-        alert("Erro ao copiar o link.");
       });
     },
   },

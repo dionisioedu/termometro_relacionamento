@@ -12,6 +12,15 @@ const routes = [
     component: UserQuestionnaire,
   },
   {
+    path: '/session/:sessionId/questions',
+    name: 'UserQuestionnaire',
+    component: UserQuestionnaire,
+    props: (route) => ({
+      sessionId: route.params.sessionId,
+      originSessionId: route.query.originSessionId || null, // Passa o originSessionId como query (nulo se não existir)
+    }),
+  },
+  {
     path: '/session/:sessionId/derived_session',
     name: 'DerivedSession',
     component: DerivedSession,

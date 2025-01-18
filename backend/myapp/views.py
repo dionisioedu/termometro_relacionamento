@@ -88,9 +88,16 @@ class DerivedSessionView(APIView):
             return Response({"error": "Sessão de origem não encontrada."}, status=status.HTTP_404_NOT_FOUND)
 
         logger.info(f"Sessão de origem: {origin_session.id}")
+
+        # Cria uma nova sessão derivada
         new_session = Session.objects.create(origin_session=origin_session)
         logger.info(f"Sessão derivada: {new_session.id}")
-        return redirect(f"{frontend_base_url}/derived_session/{new_session.id}")
+
+        return Response({
+            "session_id": origin_session.id,
+            "derived_session_id": new_session.id,
+            "origin_creator_name": origin_session.name  # Nome do criador da sessão original
+        }, status=status.HTTP_201_CREATED)
 
 class ResultsView(APIView):
     def get(self, request, session_id):
