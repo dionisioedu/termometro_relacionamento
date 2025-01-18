@@ -19,9 +19,22 @@ class CreateSessionView(APIView):
         name = request.data.get('name')
         if not name:
             return Response({"error": "Nome é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        origin_session_id = request.data.get('origin_session_id')
 
         try:
-            session = Session.objects.create(name=name)
+            # Se origin_session_id não for nulo, obtenha a sessão de origem
+            origin_session = None
+            if origin_session_id:
+                origin_session = Session.objects.filter(id=origin_session_id).first()
+                if not origin_session:
+                    return Response(
+                        {"error": f"Sessão de origem com ID {origin_session_id} não encontrada."},
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+
+            # Crie uma nova sessão e associe a sessão de origem, se aplicável
+            session = Session.objects.create(name=name, origin_session=origin_session)
 
         except Session.DoesNotExist:
             return Response(
@@ -38,6 +51,7 @@ class CreateSessionView(APIView):
 
         return Response({"session_id": session.id}, status=status.HTTP_201_CREATED)
 
+
 class QuestionsView(APIView):
     def get(self, request):
         questions = Question.objects.prefetch_related('options').all()
@@ -52,14 +66,19 @@ class SubmitAnswersView(APIView):
 
         answers_data = request.data.get('answers', [])
         for answer_data in answers_data:
-            if 'question_id' not in answer_data or 'response' not in answer_data:
-                return Response({"error": "Dados da resposta incompletos."}, status=status.HTTP_400_BAD_REQUEST)
-
             question = Question.objects.filter(id=answer_data['question_id']).first()
             if not question:
-                return Response({"error": f"Pergunta {answer_data['question_id']} não encontrada."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": f"Pergunta {answer_data['question_id']} não encontrada."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-            Answer.objects.create(session=session, question=question, response=answer_data['response'])
+            # Atualizar ou criar a resposta
+            Answer.objects.update_or_create(
+                session=session,
+                question=question,
+                defaults={"response": answer_data['response']}
+            )
 
         return Response({"message": "Respostas salvas com sucesso!"}, status=status.HTTP_201_CREATED)
 
@@ -89,19 +108,23 @@ class DerivedSessionView(APIView):
 
         logger.info(f"Sessão de origem: {origin_session.id}")
 
-        # Cria uma nova sessão derivada
-        new_session = Session.objects.create(origin_session=origin_session)
-        logger.info(f"Sessão derivada: {new_session.id}")
+        new_session = Session.objects.filter(origin_session=origin_session).last()
+        answers_submitted = Answer.objects.filter(session=new_session).exists() if new_session else False
+
+        logger.info(f"Sessão derivada: {new_session.id if new_session else 'Nova'}")
 
         return Response({
             "session_id": origin_session.id,
-            "derived_session_id": new_session.id,
-            "origin_creator_name": origin_session.name  # Nome do criador da sessão original
-        }, status=status.HTTP_201_CREATED)
+            "derived_session_id": new_session.id if new_session else None,
+            "origin_creator_name": origin_session.name,
+            "answers_submitted": answers_submitted,
+        }, status=status.HTTP_200_OK)
 
 class ResultsView(APIView):
-    def get(self, request, session_id):
-        derived_session = Session.objects.filter(id=session_id).first()
+    def get(self, request, derivedSessionId):
+
+        logger.info(f"Relatório de comparação para sessão derivada: {derivedSessionId}")
+        derived_session = Session.objects.filter(id=derivedSessionId).first()
         if not derived_session:
             return Response({"error": "Sessão derivada não encontrada."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -124,8 +147,6 @@ class ResultsView(APIView):
                     "similarity": similarity,
                 })
 
-        results_link = f"{frontend_base_url}/results/{session_id}"
         return Response({
-            "report": report,
-            "results_link": results_link
+            "report": report
         }, status=status.HTTP_200_OK)

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path
 from myapp import views
-from myapp.views import CreateSessionView, QuestionsView, SubmitAnswersView, AnswersView, DerivedSessionView
+from myapp.views import CreateSessionView, QuestionsView, SubmitAnswersView, AnswersView, DerivedSessionView, ResultsView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -10,5 +10,6 @@ urlpatterns = [
     path('api/session/<uuid:session_id>/submit_answers/', SubmitAnswersView.as_view(), name='submit_answers'),
     path('api/session/<uuid:session_id>/answers/', AnswersView.as_view(), name='answers'),
     path('api/session/<uuid:session_id>/derived_session/', DerivedSessionView.as_view(), name='derived_session'),
+    path('api/results/<uuid:derivedSessionId>/', ResultsView.as_view(), name='results'),
     path('', views.index, name='index'),
 ]

@@ -10,14 +10,10 @@ const routes = [
     path: '/',
     name: 'UserQuestionnaire',
     component: UserQuestionnaire,
-  },
-  {
-    path: '/session/:sessionId/questions',
-    name: 'UserQuestionnaire',
-    component: UserQuestionnaire,
     props: (route) => ({
-      sessionId: route.params.sessionId,
       originSessionId: route.query.originSessionId || null, // Passa o originSessionId como query (nulo se não existir)
+      isDerivedSession: route.query.isDerivedSession === "true", // Passa o isDerivedSession como parâmetro (falso se não existir)
+      originCreatorName: route.query.originCreatorName || null, // Passa o originCreatorName como query (nulo se não existir)
     }),
   },
   {
@@ -39,10 +35,13 @@ const routes = [
     props: true,
   },
   {
-    path: '/results/:sessionId',
+    path: '/results',
     name: 'ResultsView',
     component: ResultsView,
-    props: true,
+    props: (route) => ({
+      originSessionId: route.query.originSessionId || null, // Passa o originSessionId como query (nulo se não existir)
+      derivedSessionId: route.query.derivedSessionId || null, // Passa o derivedSessionId como query (nulo se não existir)
+    }),
   },
 ];
 

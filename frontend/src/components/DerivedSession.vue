@@ -2,32 +2,20 @@
   <div class="questionnaire-screen d-flex justify-content-center align-items-center vh-100">
     <div class="card p-4 shadow-sm" style="max-width: 600px; width: 100%;">
       <h1 class="text-primary text-center">Sessão Derivada</h1>
-      <h2 class="text-center">Bem-vindo ao Amorfy!</h2>
+      <p class="text-center">
+        Bem-vindo(a)! Você está participando de uma sessão derivada iniciada por
+        <strong>{{ originCreatorName }}</strong>.
+      </p>
 
-      <!-- Carregando -->
-      <div v-if="loading" class="text-center">
-        <p class="text-muted">Carregando sessão derivada...</p>
+      <!-- Tela de carregamento -->
+      <div v-if="loading">
+        <p class="text-center">Carregando sessão derivada...</p>
       </div>
 
-      <!-- Erro -->
-      <div v-else-if="errorMessage" class="alert alert-danger">
-        <p>{{ errorMessage }}</p>
-      </div>
-
-      <!-- Conteúdo principal -->
+      <!-- Tela com opção de iniciar o questionário -->
       <div v-else>
-        <p class="text-center">
-          Você foi convidado por <strong>{{ originCreatorName }}</strong> para participar desta sessão.
-        </p>
-        <p class="text-center">Clique no botão abaixo para começar o questionário:</p>
-
-        <!-- Botão -->
-        <button 
-          class="btn btn-primary w-100 mt-4"
-          @click="startQuestionnaire"
-        >
-          Começar Questionário
-        </button>
+        <p class="text-center">Clique no botão abaixo para começar o questionário.</p>
+        <button class="btn btn-primary w-100" @click="startQuestionnaire">Começar Questionário</button>
       </div>
     </div>
   </div>
@@ -46,32 +34,35 @@ export default {
   data() {
     return {
       loading: true,
-      errorMessage: null,
-      derivedSessionId: null,
-      originCreatorName: null, // Nome do criador da sessão original
+      originCreatorName: null,
     };
   },
   async created() {
     try {
-      // Chamar a API para criar a sessão derivada
+      // Verificar a sessão derivada e buscar informações do criador
       const response = await api.get(`/session/${this.sessionId}/derived_session/`);
-      this.derivedSessionId = response.data.derived_session_id;
-      this.originCreatorName = response.data.origin_creator_name;
+      const { session_id, derived_session_id, origin_creator_name, answers_submitted } = response.data;
 
-      console.log("Sessão derivada criada com sucesso:", response.data);
+      this.originCreatorName = origin_creator_name || "Desconhecido";
+      console.log("Sessão derivada carregada:", response.data);
 
-      this.loading = false;
+      // Verificar se o segundo ator já respondeu
+      if (derived_session_id && answers_submitted) {
+        console.log("Respostas já enviadas. Redirecionando para resultados...");
+        this.$router.push({ name: "ResultsView", params: { sessionId: session_id } });
+      } else {
+        this.loading = false;
+      }
     } catch (error) {
       console.error("Erro ao carregar sessão derivada:", error);
-      this.errorMessage = error.response?.data?.error || "Erro desconhecido ao criar sessão derivada.";
-      this.loading = false;
+      alert("Erro ao carregar sessão derivada. Tente novamente mais tarde.");
     }
   },
   methods: {
     startQuestionnaire() {
       this.$router.push({
         name: "UserQuestionnaire",
-        params: { sessionId: this.derivedSessionId },
+        query: { originSessionId: this.sessionId, isDerivedSession: true, originCreatorName: this.originCreatorName },
       });
     },
   },
@@ -80,6 +71,6 @@ export default {
 
 <style scoped>
 .questionnaire-screen {
-  background-color: #f8f9fa; /* Fundo leve */
+  background-color: #f8f9fa;
 }
 </style>

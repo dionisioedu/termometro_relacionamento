@@ -79,23 +79,31 @@
 
       <!-- Tela de finalização -->
       <div v-else-if="step === 'completed'">
-        <h1 class="text-success text-center">Obrigado!</h1>
-        <p class="text-center">Respostas salvas com sucesso. Use o link abaixo para compartilhar com seu parceiro(a):</p>
-        <p class="text-center text-break"><strong>{{ sessionLink + "/derived_session/" }}</strong></p>
+        <!-- Verificar se é uma sessão derivada -->
+        <div v-if="isDerivedSession">
+          <h1 class="text-success text-center">Resultados Disponíveis!</h1>
+          <p class="text-center">Respostas salvas com sucesso. Redirecionando para os resultados...</p>
+        </div>
+        <!-- Caso contrário, exibir a tela normal -->
+        <div v-else>
+          <h1 class="text-success text-center">Obrigado!</h1>
+          <p class="text-center">Respostas salvas com sucesso. Use o link abaixo para compartilhar com seu parceiro(a):</p>
+          <p class="text-center text-break"><strong>{{ sessionLink + "/derived_session/" }}</strong></p>
 
-        <!-- Botões de Copiar e Enviar para WhatsApp -->
-        <div class="d-flex justify-content-around mt-3">
-          <button 
-            class="btn btn-outline-primary"
-            @click="copyLink">
-            Copiar Link
-          </button>
-          <a 
-            :href="whatsappLink" 
-            target="_blank"
-            class="btn btn-success">
-            Enviar no WhatsApp
-          </a>
+          <!-- Botões de Copiar e Enviar para WhatsApp -->
+          <div class="d-flex justify-content-around mt-3">
+            <button 
+              class="btn btn-outline-primary"
+              @click="copyLink">
+              Copiar Link
+            </button>
+            <a 
+              :href="whatsappLink" 
+              target="_blank"
+              class="btn btn-success">
+              Enviar no WhatsApp
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -111,31 +119,25 @@ export default {
       type: String,
       default: null, // Nulo para sessões normais, preenchido para derivadas
     },
+    isDerivedSession: {
+      type: Boolean,
+      default: false,
+    },
+    originCreatorName: {
+      type: String,
+      default: null,
+    },
   },
   data() {
     return {
       step: "welcome", // welcome | questions | completed
       name: "",
-      sessionId: null,
       sessionLink: "",
+      sessionId: null,
       questions: [], // Estrutura das perguntas: [{ id, text, options: [{ id, text }] }]
       currentQuestionIndex: 0,
       answers: [], // Armazena as respostas para cada pergunta
-      isDerivedSession: false,
-      originCreatorName: null,
     };
-  },
-  async created() {
-    this.isDerivedSession = !!this.originSessionId;
-    if (this.isDerivedSession) {
-      try {
-        const response = await api.get(`/session/${this.originSessionId}/`);
-        this.originCreatorName = response.data.creator_name || "Desconhecido";
-        console.log("Sessão derivada iniciada pelo criador:", this.originCreatorName);
-      } catch (error) {
-        console.error("Erro ao carregar sessão original:", error);
-      }
-    }
   },
   computed: {
     currentQuestion() {
@@ -158,6 +160,12 @@ export default {
           this.sessionId = response.data.session_id;
           this.sessionLink = `${window.location.origin}/session/${this.sessionId}`;
           console.log("Sessão criada:", this.sessionId);
+        }
+        else {
+          const response = await api.post("/session/create/", { name: this.name, origin_session_id: this.originSessionId });
+          this.sessionId = response.data.session_id;
+          this.sessionLink = `${window.location.origin}/session/${this.sessionId}`;
+          console.log("Sessão derivada iniciada:", this.sessionId);
         }
 
         const questionsResponse = await api.get("/questions/");
@@ -197,14 +205,25 @@ export default {
           response: this.answers[index],
         }));
 
+        console.log(`(${this.sessionId})Enviando respostas para o backend:`, answersData);
+
         await api.post(`/session/${this.sessionId}/submit_answers/`, { answers: answersData });
 
         if (this.isDerivedSession) {
-          const resultsLink = `${window.location.origin}/results/${this.sessionId}`;
-          this.$emit("show-results", { sessionId: this.sessionId, resultsLink });
+          console.log("Sessão derivada detectada. Redirecionando para resultados...");
+          //const resultsLink = `${window.location.origin}/results?originSessionId=${this.originSessionId}&derivedSessionId=${this.sessionId}`;
+          this.$router.push({
+            name: "ResultsView",
+            query: {
+              originSessionId: this.originSessionId,
+              derivedSessionId: this.sessionId,
+            },
+          });
         } else {
           this.step = "completed";
         }
+
+        console.log("Respostas enviadas com sucesso!");
       } catch (error) {
         console.error("Erro ao salvar respostas:", error);
       }
