@@ -13,7 +13,6 @@ services:
         value: http://backend:8000
     plan: free
     healthCheckPath: /health
-    env: python
     dependsOn:
       - name: db
 
