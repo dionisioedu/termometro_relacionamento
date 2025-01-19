@@ -25,8 +25,20 @@ SECRET_KEY = 'django-insecure-rrggylksvw-p+3d-n+aedn+@zd79l-l*r)_^zjb*niu+1jgxdc
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["backend-n2ol.onrender.com"]
+ALLOWED_HOSTS = [
+    "backend-n2ol.onrender.com",
+    "frontend.onrender.com",  # Opcional, se aplicável
+    "127.0.0.1",              # Para uso local
+    "localhost"
+]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://backend-n2ol.onrender.com",  # Domínio do backend no Render
+    "https://frontend.onrender.com"      # Domínio do frontend (se aplicável)
+]
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
 
 # Application definition
 
