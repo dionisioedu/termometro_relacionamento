@@ -1,7 +1,7 @@
 QUESTIONS = [
     # Insights sobre linguagens de amor
-    {"id": "Q7", "text": "O que te faz se sentir amado(a) pelo seu parceiro(a)?", "category": "love_language", "options": ["Toque físico", "Palavras de Insentivo", "Tempo de qualidade", "Presentes", "Atos de serviço"]},
-    {"id": "Q8", "text": "Como você acha que seu parceiro(a) se sente mais amado(a)?", "category": "love_language", "options": ["Toque físico", "Palavras de Insentivo", "Tempo de qualidade", "Presentes", "Atos de serviço"]},
+    {"id": "Q7", "text": "O que te faz se sentir amado(a) pelo seu parceiro(a)?", "category": "love_language", "options": ["Toque físico", "Palavras de Incentivo", "Tempo de qualidade", "Presentes", "Atos de serviço"]},
+    {"id": "Q8", "text": "Como você acha que seu parceiro(a) se sente mais amado(a)?", "category": "love_language", "options": ["Toque físico", "Palavras de Incentivo", "Tempo de qualidade", "Presentes", "Atos de serviço"]},
     {"id": "Q9", "text": "O quanto você se sente amado(a) pelo seu parceiro(a)?", "category": "love_language", "options": ["Muito", "Mais ou menos", "Pouco", "Nada"]},
     {"id": "Q10", "text": "Quanto você acha que seu parceiro(a) se sente amado(a) por você?", "category": "love_language", "options": ["Muito", "Mais ou menos", "Pouco", "Nada"]},
     {"id": "Q11", "text": "O quanto você valoriza o carinho?", "category": "love_language", "options": ["Muito", "Médio", "Pouco"]},
