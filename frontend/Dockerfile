@@ -1,26 +1,25 @@
-# Usar imagem base do Node.js
+# Usar uma imagem base do Node.js
 FROM node:18
 
-# Configurar o diretório de trabalho
+# Diretório de trabalho
 WORKDIR /app
 
-# Copiar arquivos essenciais para instalação de dependências
+# Copiar arquivos essenciais para o build
 COPY package.json package-lock.json ./
 
-# Instalar dependências e corrigir problemas com pacotes
-RUN npm install --legacy-peer-deps
+# Resolver problemas de dependências e instalar pacotes
+RUN npm install --legacy-peer-deps \
+    && npm install terser-webpack-plugin@^5.1.4 schema-utils@^3.1.1 --save-dev \
+    && npm audit fix --force
 
-# Adicionar resoluções para corrigir versões problemáticas
-RUN npm install schema-utils terser-webpack-plugin --save && npm audit fix --force
-
-# Copiar todo o código do projeto para o contêiner
+# Copiar o restante do projeto
 COPY . .
 
-# Construir o projeto para produção
+# Compilar os arquivos estáticos para produção
 RUN npm run build
 
-# Instalar o pacote "serve" para servir os arquivos estáticos
+# Instalar o servidor para servir arquivos estáticos
 RUN npm install -g serve
 
-# Comando de execução para servir os arquivos da pasta 'dist'
+# Comando para iniciar o servidor de arquivos estáticos
 CMD ["serve", "-s", "dist"]
