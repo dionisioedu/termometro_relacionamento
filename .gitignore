@@ -1,4 +1,4 @@
-# Geral
+# Logs e arquivos temporários
 *.log
 *.tmp
 *.swp
@@ -7,13 +7,14 @@
 *.seed
 *.lock
 
-# Diretórios comuns a ignorar
+# Diretórios comuns
 node_modules/
 dist/
 build/
 coverage/
 .env
 .env.local
+.env.*  # Qualquer variação de arquivo .env
 .DS_Store
 
 # Configurações do sistema operacional
@@ -26,18 +27,30 @@ desktop.ini
 *.sublime-workspace
 *.sublime-project
 
-# Backend
+# Backend (Django)
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 db.sqlite3  # Ignore o banco SQLite local (apenas para desenvolvimento)
 *.sqlite3
-migrations/  # Ignore migrações já aplicadas se não forem relevantes
-media/  # Diretório de uploads (ajuste conforme necessário)
+migrations/  # Ignore migrações antigas (se não forem necessárias no repositório)
+staticfiles/  # Diretório gerado pelo collectstatic
+media/  # Diretório para uploads de usuários (ajuste conforme necessário)
 
-# Frontend
+# Frontend (Vue.js ou similar)
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 /public/assets/  # Diretório de compilação, se aplicável
+/.nuxt/  # Diretório de build do Nuxt.js (se usado)
+.eslintcache
+package-lock.json  # Apenas se não quiser versionar
+
+# Configuração do Docker
+*.env  # Arquivos de ambiente
+**/docker-compose.override.yml  # Arquivos de configuração locais
+
+# Outros
+*.crt  # Certificados SSL (se gerados localmente)
+*.key  # Chaves privadas
