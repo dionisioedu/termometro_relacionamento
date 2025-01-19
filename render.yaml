@@ -3,16 +3,14 @@ services:
     type: web
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python manage.py runserver 0.0.0.0:8000
+    startCommand: gunicorn backend.wsgi:application --bind 0.0.0.0:8000
     build:
       context: ./backend
     envVars:
       - key: DATABASE_URL
-        value: postgres://postgres:postgres@db:5432/postgres
-      - key: VUE_APP_API_URL
-        value: http://backend:8000
+        value: postgres://postgres:postgres@db.internal:5432/postgres
     plan: free
-    healthCheckPath: /health
+    healthCheckPath: /
 
   - name: frontend
     type: web
@@ -23,12 +21,7 @@ services:
       context: ./frontend
     envVars:
       - key: VUE_APP_API_URL
-        value: http://backend:8000
+        value: https://backend.onrender.com
     staticPublishPath: ./dist
     plan: free
-    dependsOn:
-      - name: backend
 
-volumes:
-  - name: pgdata
-    mountPath: /var/lib/postgresql/data
