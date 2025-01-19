@@ -200,7 +200,6 @@ export default {
           this.$router.push({
             name: "ResultsView",
             query: {
-              originSessionId: this.originSessionId,
               derivedSessionId: this.sessionId,
             },
           });

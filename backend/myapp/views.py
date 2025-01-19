@@ -2,17 +2,16 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Session, Question, Answer
-from .serializers import SessionSerializer, QuestionSerializer, AnswerSerializer
+from .insights import Insights
+from .serializers import QuestionSerializer
 from django.http import HttpResponse
 from django.shortcuts import redirect
 import logging
 
 logger = logging.getLogger(__name__)
 
-frontend_base_url = "http://localhost:8080"  # URL do frontend
-
 def index(request):
-    return HttpResponse("Termômetro de Relacionamentos!")
+    return HttpResponse("Amorfy - Termômetro de Relacionamentos!")
 
 class CreateSessionView(APIView):
     def post(self, request):
@@ -122,31 +121,34 @@ class DerivedSessionView(APIView):
 
 class ResultsView(APIView):
     def get(self, request, derivedSessionId):
-
         logger.info(f"Relatório de comparação para sessão derivada: {derivedSessionId}")
+        
+        # Verificar se a sessão derivada existe
         derived_session = Session.objects.filter(id=derivedSessionId).first()
         if not derived_session:
             return Response({"error": "Sessão derivada não encontrada."}, status=status.HTTP_404_NOT_FOUND)
 
+        # Verificar se a sessão de origem está vinculada
         origin_session = derived_session.origin_session
         if not origin_session:
             return Response({"error": "Sessão de origem não vinculada à sessão derivada."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Obter respostas das sessões
         answers_origin = Answer.objects.filter(session=origin_session)
         answers_derived = Answer.objects.filter(session=derived_session)
 
-        report = []
-        for origin_answer in answers_origin:
-            derived_answer = answers_derived.filter(question=origin_answer.question).first()
-            if derived_answer:
-                similarity = "igual" if origin_answer.response == derived_answer.response else "diferente"
-                report.append({
-                    "question": origin_answer.question.text,
-                    "origin_response": origin_answer.response,
-                    "derived_response": derived_answer.response,
-                    "similarity": similarity,
-                })
+        # Converter respostas em dicionários
+        answers_user1 = {answer.question.id: answer.response for answer in answers_origin}
+        answers_user2 = {answer.question.id: answer.response for answer in answers_derived}
 
+        # Gerar insights
+        insights_generator = Insights(answers_user1, answers_user2)
+        insights = insights_generator.generate_insights(
+            user1_name=origin_session.name,
+            user2_name=derived_session.name
+        )
+
+        # Estruturar resposta
         return Response({
-            "report": report
+            "insights": insights
         }, status=status.HTTP_200_OK)

@@ -39,7 +39,6 @@ const routes = [
     name: 'ResultsView',
     component: ResultsView,
     props: (route) => ({
-      originSessionId: route.query.originSessionId || null, // Passa o originSessionId como query (nulo se não existir)
       derivedSessionId: route.query.derivedSessionId || null, // Passa o derivedSessionId como query (nulo se não existir)
     }),
   },

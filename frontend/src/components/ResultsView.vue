@@ -6,6 +6,24 @@
         <p class="tagline">Veja como as respostas se comparam.</p>
       </div>
 
+      <!-- Insights em Cards -->
+      <div v-if="insights.length > 0" class="results-cards mt-4">
+        <div
+          v-for="insight in insights"
+          :key="insight.title"
+          class="card shadow-sm mb-3 p-3"
+          :class="{
+            'card-success': insight.category === 'relationship',
+            'card-info': insight.category === 'profile',
+            'card-warning': insight.category === 'preferences'
+          }"
+        >
+          <h5 class="text-gradient">{{ insight.title }}</h5>
+          <p>{{ insight.description }}</p>
+        </div>
+      </div>
+
+      <!-- Tabela Comparativa -->
       <div v-if="report.length > 0" class="results-table mt-4">
         <table class="table table-hover table-dark">
           <thead>
@@ -29,7 +47,8 @@
         </table>
       </div>
 
-      <div v-else class="text-center">
+      <!-- Mensagem de Carregamento -->
+      <div v-else-if="insights.length === 0 && report.length === 0" class="text-center">
         <p class="text-muted">Carregando resultados...</p>
       </div>
 
@@ -56,10 +75,6 @@ import api from "../api";
 
 export default {
   props: {
-    originSessionId: {
-      type: String,
-      required: true,
-    },
     derivedSessionId: {
       type: String,
       required: true,
@@ -68,13 +83,15 @@ export default {
   data() {
     return {
       report: [], // Resultados comparativos
-      resultsLink: `${window.location.origin}/results?originSessionId=${this.originSessionId}&derivedSessionId=${this.derivedSessionId}`,
+      insights: [], // Lista de insights
+      resultsLink: `${window.location.origin}/results?derivedSessionId=${this.derivedSessionId}`,
     };
   },
   async created() {
     try {
       const response = await api.get(`/results/${this.derivedSessionId}`);
-      this.report = response.data.report;
+      this.insights = response.data.insights; // Carregar insights
+      this.report = response.data.report || []; // Manter compatibilidade com relatórios antigos
     } catch (error) {
       console.error("Erro ao carregar resultados:", error);
     }
@@ -125,6 +142,32 @@ export default {
   font-size: 1.1rem;
   color: #cccccc;
   margin-bottom: 20px;
+}
+
+.results-cards .card {
+  border-radius: 12px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  padding: 15px;
+  color: #ffffff;
+}
+
+.card-success {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+}
+
+.card-info {
+  background-color: #d1ecf1;
+  border-color: #bee5eb;
+  color: #0c5460;
+}
+
+.card-warning {
+  background-color: #fff3cd;
+  border-color: #ffeeba;
+  color: #856404;
 }
 
 .table {
