@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@popperjs/core": "^2.11.8",
-    "@vue/cli-service": "^5.0.0",
+    "@vue/cli-service": "^5.0.8",
     "axios": "^1.7.9",
     "bootstrap": "^5.3.3",
     "core-js": "^3.8.3",
@@ -21,7 +21,6 @@
     "@babel/eslint-parser": "^7.21.0",
     "@vue/cli-plugin-babel": "^5.0.8",
     "@vue/cli-plugin-eslint": "^5.0.8",
-    "@vue/cli-service": "^5.0.8",
     "@vue/compiler-sfc": "^3.5.13",
     "eslint": "^8.50.0",
     "eslint-plugin-vue": "^9.3.0"
