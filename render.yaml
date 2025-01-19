@@ -1,0 +1,49 @@
+services:
+  - name: backend
+    type: web
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python manage.py runserver 0.0.0.0:8000
+    build:
+      context: ./backend
+    envVars:
+      - key: DATABASE_URL
+        value: postgres://postgres:postgres@db:5432/postgres
+      - key: VUE_APP_API_URL
+        value: http://backend:8000
+    plan: free
+    healthCheckPath: /health
+    env: python
+    dependsOn:
+      - name: db
+
+  - name: frontend
+    type: web
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npx serve -s dist
+    build:
+      context: ./frontend
+    envVars:
+      - key: VUE_APP_API_URL
+        value: http://backend:8000
+    staticPublishPath: ./dist
+    plan: free
+    dependsOn:
+      - name: backend
+
+  - name: db
+    type: database
+    plan: free
+    databaseType: postgres
+    properties:
+      engine: postgres
+      version: 14
+      settings:
+        user: postgres
+        password: postgres
+        database: postgres
+
+volumes:
+  - name: pgdata
+    mountPath: /var/lib/postgresql/data
