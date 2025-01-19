@@ -10,6 +10,7 @@ COPY package.json package-lock.json ./
 # Instalar dependências, incluindo js-cookie
 RUN npm install --legacy-peer-deps \
     && npm install js-cookie --save \
+    && npm install entities@latest --save \
     && npm audit fix --force
 
 # Copiar o restante do código do projeto
