@@ -8,7 +8,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Instalar dependências, incluindo js-cookie
-RUN npm install
+RUN npm install --legacy-peer-deps \
+    && npm audit fix --force
 
 # Copiar o restante do código do projeto
 COPY . .
