@@ -1,11 +1,17 @@
 from django.core.management.base import BaseCommand
-from myapp.models import Question, AnswerOption
+from myapp.models import Question, AnswerOption, Answer, Session
 from myapp.questions_data import QUESTIONS
 
 class Command(BaseCommand):
     help = "Carrega perguntas e opções no banco de dados."
 
     def handle(self, *args, **kwargs):
+        self.stdout.write("Limpando dados existentes...")
+        Answer.objects.all().delete()
+        AnswerOption.objects.all().delete()
+        Question.objects.all().delete()
+        Session.objects.all().delete()
+
         for question_data in QUESTIONS:
             question, created = Question.objects.get_or_create(
                 id=question_data["id"],

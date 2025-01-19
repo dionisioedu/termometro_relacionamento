@@ -26,7 +26,17 @@
       <div v-else-if="step === 'questions'">
         <h2 class="text-primary text-center">Pergunta {{ currentQuestionIndex + 1 }} de {{ questions.length }}</h2>
         <p class="lead text-center">{{ currentQuestion.text }}</p>
-        <div class="options-container">
+
+        <!-- Barra de progresso -->
+        <div class="progress-container">
+          <div 
+            class="progress-bar" 
+            :style="{ width: ((currentQuestionIndex + 1) / questions.length * 100) + '%' }">
+          </div>
+        </div>
+
+        <!-- Opções ou campo aberto -->
+        <div v-if="currentQuestion.options && currentQuestion.options.length" class="options-container">
           <div 
             v-for="option in currentQuestion.options" 
             :key="option.id" 
@@ -36,6 +46,16 @@
             {{ option.text }}
           </div>
         </div>
+        <div v-else>
+          <input 
+            type="text" 
+            class="form-control mt-3" 
+            v-model="answers[currentQuestionIndex]" 
+            :placeholder="'Digite sua resposta aqui...'"
+          />
+        </div>
+
+        <!-- Botões de navegação -->
         <div class="d-flex justify-content-between mt-4">
           <button
             type="button"
@@ -338,6 +358,21 @@ a.btn-success:hover {
   background-color: #45a049;
   border-color: #3e923d;
   box-shadow: 0px 4px 12px rgba(72, 161, 75, 0.6);
+}
+
+/* Estilo da barra de progresso */
+.progress-container {
+  height: 10px;
+  background-color: #f1f1f1; /* Cor do fundo da barra */
+  border-radius: 5px;
+  margin: 10px 0;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #5cb85c; /* Cor da barra preenchida */
+  transition: width 0.3s ease-in-out;
 }
 
 .animate__fadeIn {
