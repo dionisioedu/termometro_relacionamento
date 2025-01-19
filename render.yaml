@@ -32,18 +32,6 @@ services:
     dependsOn:
       - name: backend
 
-  - name: db
-    type: database
-    plan: free
-    databaseType: postgres
-    properties:
-      engine: postgres
-      version: 14
-      settings:
-        user: postgres
-        password: postgres
-        database: postgres
-
 volumes:
   - name: pgdata
     mountPath: /var/lib/postgresql/data
