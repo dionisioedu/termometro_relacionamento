@@ -16,6 +16,7 @@
               class="form-control custom-input"
               placeholder="Digite seu nome"
               required
+              maxlength="20"
             />
           </div>
           <button type="submit" class="btn btn-gradient w-100">Começar</button>

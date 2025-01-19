@@ -150,5 +150,7 @@ class ResultsView(APIView):
 
         # Estruturar resposta
         return Response({
-            "insights": insights
+            "insights": insights,
+            "user1_name": origin_session.name,
+            "user2_name": derived_session.name
         }, status=status.HTTP_200_OK)

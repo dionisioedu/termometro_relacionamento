@@ -2,8 +2,18 @@
   <div class="results-screen d-flex justify-content-center align-items-start vh-100">
     <div class="card p-4 shadow-lg animate__animated animate__fadeIn" style="max-width: 800px; width: 100%; border-radius: 20px;">
       <div class="text-center">
-        <h1 class="text-gradient">Resultados Comparativos</h1>
+        <h1 class="solid-title">Resultados do Casal</h1>
         <p class="tagline">Veja como as respostas se comparam.</p>
+      </div>
+
+      <!-- Placar Total -->
+      <div class="scoreboard d-flex justify-content-between align-items-center mb-4">
+        <div class="actor-score">
+          <span class="badge badge-total">{{ user1Name }}: {{ user1TotalScore }}</span>
+        </div>
+        <div class="actor-score">
+          <span class="badge badge-total">{{ user2Name }}: {{ user2TotalScore }}</span>
+        </div>
       </div>
 
       <!-- Insights em Cards -->
@@ -12,43 +22,21 @@
           v-for="insight in insights"
           :key="insight.title"
           class="card shadow-sm mb-3 p-3"
-          :class="{
-            'card-success': insight.category === 'relationship',
-            'card-info': insight.category === 'profile',
-            'card-warning': insight.category === 'preferences'
-          }"
+          :class="getCustomCardClass(insight.color_flag)"
         >
-          <h5 class="text-gradient">{{ insight.title }}</h5>
-          <p>{{ insight.description }}</p>
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="insight-title">{{ insight.title }}</h5>
+          </div>
+          <div class="d-flex justify-content-between mt-2">
+            <span :class="getBadgeClass(insight.color_flag)" class="badge">{{ user1Name }}: {{ insight.user1_score }}</span>
+            <span :class="getBadgeClass(insight.color_flag)" class="badge">{{ user2Name }}: {{ insight.user2_score }}</span>
+          </div>
+          <p class="insight-description mt-3">{{ insight.description }}</p>
         </div>
       </div>
 
-      <!-- Tabela Comparativa -->
-      <div v-if="report.length > 0" class="results-table mt-4">
-        <table class="table table-hover table-dark">
-          <thead>
-            <tr>
-              <th scope="col">Pergunta</th>
-              <th scope="col">Primeiro Ator</th>
-              <th scope="col">Segundo Ator</th>
-              <th scope="col">Compatibilidade</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="result in report" :key="result.question">
-              <td>{{ result.question }}</td>
-              <td>{{ result.origin_response }}</td>
-              <td>{{ result.derived_response }}</td>
-              <td :class="{'text-success': result.similarity === 'igual', 'text-danger': result.similarity === 'diferente'}">
-                {{ result.similarity }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
       <!-- Mensagem de Carregamento -->
-      <div v-else-if="insights.length === 0 && report.length === 0" class="text-center">
+      <div v-else class="text-center">
         <p class="text-muted">Carregando resultados...</p>
       </div>
 
@@ -82,16 +70,23 @@ export default {
   },
   data() {
     return {
-      report: [], // Resultados comparativos
       insights: [], // Lista de insights
+      user1Name: "Usuário 1", // Nome do primeiro ator
+      user2Name: "Usuário 2", // Nome do segundo ator
+      user1TotalScore: 0, // Pontuação total do primeiro ator
+      user2TotalScore: 0, // Pontuação total do segundo ator
       resultsLink: `${window.location.origin}/results?derivedSessionId=${this.derivedSessionId}`,
     };
   },
   async created() {
     try {
       const response = await api.get(`/results/${this.derivedSessionId}`);
-      this.insights = response.data.insights; // Carregar insights
-      this.report = response.data.report || []; // Manter compatibilidade com relatórios antigos
+      const { insights, user1_total_score, user2_total_score } = response.data.insights;
+      this.insights = insights;
+      this.user1TotalScore = user1_total_score;
+      this.user2TotalScore = user2_total_score;
+      this.user1Name = response.data.user1_name;
+      this.user2Name = response.data.user2_name;
     } catch (error) {
       console.error("Erro ao carregar resultados:", error);
     }
@@ -109,6 +104,30 @@ export default {
         .then(() => alert("Link copiado para a área de transferência!"))
         .catch((err) => alert("Erro ao copiar o link: " + err));
     },
+    getCustomCardClass(colorFlag) {
+      switch (colorFlag) {
+        case "green":
+          return "custom-card-success";
+        case "yellow":
+          return "custom-card-warning";
+        case "red":
+          return "custom-card-danger";
+        default:
+          return "custom-card-default";
+      }
+    },
+    getBadgeClass(colorFlag) {
+      switch (colorFlag) {
+        case "green":
+          return "badge-success";
+        case "yellow":
+          return "badge-warning";
+        case "red":
+          return "badge-danger";
+        default:
+          return "badge-default";
+      }
+    },
   },
 };
 </script>
@@ -125,17 +144,17 @@ export default {
   overflow: auto;
 }
 
+.solid-title {
+  background: linear-gradient(to right, #cfa877, #f7e2c6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 .card {
   background-color: #2a2a2a;
   border: none;
   border-radius: 20px;
   box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.3);
-}
-
-.text-gradient {
-  background: linear-gradient(to right, #cfa877, #f7e2c6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
 
 .tagline {
@@ -149,54 +168,87 @@ export default {
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
   padding: 15px;
+  color: inherit;
+}
+
+.insight-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: inherit; /* Herdar cor definida pelo card */
+}
+
+.insight-description {
+  color: inherit; /* Herdar cor definida pelo card */
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.actor-score {
+  font-size: 1.2rem;
+  font-weight: bold;
   color: #ffffff;
+  display: flex;
+  align-items: center;
 }
 
-.card-success {
-  background-color: #d4edda;
-  border-color: #c3e6cb;
-  color: #155724;
-}
-
-.card-info {
-  background-color: #d1ecf1;
-  border-color: #bee5eb;
-  color: #0c5460;
-}
-
-.card-warning {
-  background-color: #fff3cd;
-  border-color: #ffeeba;
-  color: #856404;
-}
-
-.table {
+.badge-total {
+  background-color: #007bff;
   color: #ffffff;
-  background-color: #2a2a2a;
-  border-radius: 10px;
-  overflow: hidden;
+  font-size: 1rem;
+  padding: 5px 10px;
+  border-radius: 8px;
+  margin-left: 10px;
 }
 
-.table th {
-  background-color: #3b3b3b;
-  color: #f7e2c6;
+.custom-card-success {
+  background-color: #eafaf1; /* Fundo suave verde */
+  border-color: #c7e8d4;
+  color: #2b6041; /* Texto verde escuro */
+}
+
+.custom-card-warning {
+  background-color: #fff9e6; /* Fundo suave amarelo */
+  border-color: #ffe4a3;
+  color: #856404; /* Texto amarelo escuro */
+}
+
+.custom-card-danger {
+  background-color: #fdecea; /* Fundo suave vermelho */
+  border-color: #f5b4b4;
+  color: #8a1f1f; /* Texto vermelho escuro */
+}
+
+.custom-card-default {
+  background-color: #f5f5f5; /* Fundo neutro */
+  border-color: #e0e0e0;
+  color: #333333; /* Texto padrão escuro */
+}
+
+.badge {
+  padding: 5px 10px;
+  border-radius: 12px;
+  font-size: 0.9rem;
   font-weight: bold;
 }
 
-.table td {
-  background-color: #2a2a2a;
+.badge-success {
+  background-color: #28a745;
   color: #ffffff;
-  border-top: 1px solid #444444;
 }
 
-.text-success {
-  color: #4caf50 !important;
-  font-weight: bold;
+.badge-warning {
+  background-color: #ffc107;
+  color: #212529;
 }
 
-.text-danger {
-  color: #f44336 !important;
-  font-weight: bold;
+.badge-danger {
+  background-color: #dc3545;
+  color: #ffffff;
+}
+
+.badge-default {
+  background-color: #6c757d;
+  color: #ffffff;
 }
 
 .btn-gradient {

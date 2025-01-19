@@ -9,9 +9,9 @@
       <div v-else>
         <div class="text-center">
           <img src="/amorfy-logo.png" alt="Amorfy" style="width: 150px; margin-bottom: 20px;" />
-          <h1 class="text-gradient">Sessão Derivada</h1>
+          <h1 class="text-gradient">Descubra qual a temperatura do seu relacionamento!</h1>
           <p class="tagline">
-            Bem-vindo(a)! Você está participando de uma sessão derivada iniciada por
+            Você foi convidado(a) por
             <strong>{{ originCreatorName }}</strong>.
           </p>
         </div>
